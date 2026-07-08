@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "480148514109",
+    "project_id": "the-phone-s-planet",
+    "storage_bucket": "the-phone-s-planet.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:480148514109:android:a065247787bdcf6a4e5154",
+        "android_client_info": {
+          "package_name": "com.company.planet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKXkJ_SzwgxIQnp8qzaJCNK6aKMW9lxno"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
