@@ -2,7 +2,7 @@ package com.company.planet.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,12 +15,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -34,9 +40,9 @@ import com.company.planet.ui.theme.Danger
 import com.company.planet.ui.theme.InterFamily
 import com.company.planet.ui.theme.JetBrainsMonoFamily
 import com.company.planet.ui.theme.Line
-import com.company.planet.ui.theme.Muted
-import com.company.planet.ui.theme.Muted2
-import com.company.planet.ui.theme.SpaceGroteskFamily
+import com.company.planet.ui.theme.Accent
+import com.company.planet.ui.theme.TextPrimary
+import com.company.planet.ui.theme.TextSecondary
 import com.company.planet.ui.util.formatMoney
 
 @Composable
@@ -45,17 +51,33 @@ fun PhoneCard(
     onClick: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    highlighted: Boolean = false,
+    index: Int = 0
 ) {
     val computed = computePhone(phone)
     val color = Color(brandColor(phone.company))
+    val cardInteraction = remember { MutableInteractionSource() }
+    val pressed by cardInteraction.collectIsPressedAsState()
 
     Column(
         modifier = modifier
+            .tppEnterAnimation(index)
+            .tppCard3D()
+            .tppCardGlow(color, highlighted)
+            .graphicsLayer {
+                scaleX = if (pressed) 0.985f else 1f
+                scaleY = if (pressed) 0.985f else 1f
+                translationY = if (pressed) 2f else if (highlighted) -2f else 0f
+            }
             .clip(RoundedCornerShape(16.dp))
             .background(BgPanel)
-            .border(1.dp, Line, RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
+            .border(
+                width = if (highlighted) 1.5.dp else 1.dp,
+                color = if (highlighted) color else Line,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .clickable(interactionSource = cardInteraction, indication = null, onClick = onClick)
             .padding(16.dp)
     ) {
         Row(
@@ -78,7 +100,8 @@ fun PhoneCard(
                 Column {
                     Text(
                         text = phone.model.ifBlank { "Untitled model" },
-                        fontFamily = SpaceGroteskFamily,
+                        color = TextPrimary,
+                        fontFamily = InterFamily,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.5.sp,
                         maxLines = 2,
@@ -86,7 +109,8 @@ fun PhoneCard(
                     )
                     Text(
                         text = "${phone.company.ifBlank { "—" }} · ${phone.storage.ifBlank { "—" }} · ${phone.colour.ifBlank { "—" }}",
-                        color = Muted,
+                        color = TextSecondary,
+                        fontFamily = InterFamily,
                         fontSize = 12.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -94,35 +118,11 @@ fun PhoneCard(
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(BgElevated)
-                        .border(1.dp, Line, RoundedCornerShape(8.dp))
-                        .clickable(onClick = onEdit)
-                        .padding(7.dp)
-                ) {
-                    androidx.compose.material3.Icon(
-                        Icons.Outlined.Edit,
-                        contentDescription = "Edit",
-                        tint = Muted,
-                        modifier = Modifier.height(14.dp)
-                    )
+                CardIconButton(onClick = onEdit, danger = false) {
+                    Icon(Icons.Outlined.Edit, "Edit", tint = TextSecondary, modifier = Modifier.height(14.dp))
                 }
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(BgElevated)
-                        .border(1.dp, Line, RoundedCornerShape(8.dp))
-                        .clickable(onClick = onDelete)
-                        .padding(7.dp)
-                ) {
-                    androidx.compose.material3.Icon(
-                        Icons.Outlined.Delete,
-                        contentDescription = "Delete",
-                        tint = Danger,
-                        modifier = Modifier.height(14.dp)
-                    )
+                CardIconButton(onClick = onDelete, danger = true) {
+                    Icon(Icons.Outlined.Delete, "Delete", tint = Danger, modifier = Modifier.height(14.dp))
                 }
             }
         }
@@ -152,7 +152,7 @@ fun PhoneCard(
         ) {
             Text(
                 text = "TOTAL PROFIT",
-                color = Muted,
+                color = TextSecondary,
                 fontSize = 11.sp,
                 fontFamily = InterFamily,
                 fontWeight = FontWeight.SemiBold,
@@ -165,8 +165,8 @@ fun PhoneCard(
                     else -> formatMoney(computed.totalProfit)
                 },
                 color = when {
-                    !computed.sold -> Muted2
-                    computed.totalProfit >= 0 -> Color(0xFF5EEAD4)
+                    !computed.sold -> TextSecondary
+                    computed.totalProfit >= 0 -> Accent
                     else -> Danger
                 },
                 fontFamily = JetBrainsMonoFamily,
@@ -174,6 +174,31 @@ fun PhoneCard(
                 fontSize = 15.sp
             )
         }
+    }
+}
+
+@Composable
+private fun CardIconButton(
+    onClick: () -> Unit,
+    danger: Boolean,
+    content: @Composable () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+
+    Box(
+        modifier = Modifier
+            .graphicsLayer {
+                scaleX = if (pressed) 0.9f else 1f
+                scaleY = if (pressed) 0.9f else 1f
+            }
+            .clip(RoundedCornerShape(8.dp))
+            .background(BgElevated)
+            .border(1.dp, Line, RoundedCornerShape(8.dp))
+            .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
+            .padding(7.dp)
+    ) {
+        content()
     }
 }
 
@@ -190,13 +215,13 @@ private fun PhoneCardRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label, color = Muted, fontSize = 12.5.sp, fontFamily = InterFamily)
+        Text(label, color = TextSecondary, fontSize = 12.5.sp, fontFamily = InterFamily)
         if (trailing != null) {
             trailing()
         } else {
             Text(
                 value,
-                color = Color(0xFFE9EBEE),
+                color = TextPrimary,
                 fontSize = 12.5.sp,
                 fontFamily = JetBrainsMonoFamily,
                 fontWeight = FontWeight.Medium

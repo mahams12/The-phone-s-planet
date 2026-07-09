@@ -1,5 +1,7 @@
 package com.company.planet.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,14 +13,21 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -32,8 +41,8 @@ import com.company.planet.ui.theme.InterFamily
 import com.company.planet.ui.theme.JetBrainsMonoFamily
 import com.company.planet.ui.theme.Line
 import com.company.planet.ui.theme.Muted
-import com.company.planet.ui.theme.SpaceGroteskFamily
 import com.company.planet.ui.theme.TextPrimary
+import com.company.planet.ui.theme.TextSecondary
 import com.company.planet.viewmodel.StatusFilter
 
 @Composable
@@ -42,10 +51,15 @@ fun StatCard(
     value: String,
     color: Color,
     modifier: Modifier = Modifier,
-    valueSize: Float = 21f
+    valueSize: Float = 21f,
+    index: Int = 0,
+    subtitle: String? = null
 ) {
     Column(
         modifier = modifier
+            .fillMaxHeight()
+            .tppEnterAnimation(index)
+            .tppCard3D()
             .background(BgPanel, RoundedCornerShape(16.dp))
             .border(1.dp, Line, RoundedCornerShape(16.dp))
             .drawBehind {
@@ -60,7 +74,7 @@ fun StatCard(
     ) {
         Text(
             text = label.uppercase(),
-            color = Muted,
+            color = TextSecondary,
             fontFamily = InterFamily,
             fontWeight = FontWeight.SemiBold,
             fontSize = 11.5.sp,
@@ -72,12 +86,23 @@ fun StatCard(
         Text(
             text = value,
             color = color,
-            fontFamily = SpaceGroteskFamily,
+            fontFamily = InterFamily,
             fontWeight = FontWeight.Bold,
             fontSize = valueSize.sp,
             maxLines = 1,
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
+        if (subtitle != null) {
+            Text(
+                text = subtitle,
+                color = TextSecondary,
+                fontFamily = InterFamily,
+                fontSize = 11.sp,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        } else {
+            Spacer(modifier = Modifier.height(15.dp))
+        }
     }
 }
 
@@ -92,12 +117,30 @@ fun TppFilterChip(
     val borderColor = if (selected) Accent else Line
     val textColor = if (selected) Accent else Muted
 
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.96f else 1f,
+        animationSpec = spring(dampingRatio = 0.62f, stiffness = 780f),
+        label = "chipScale"
+    )
+    val lift by animateFloatAsState(
+        targetValue = if (pressed) 0f else if (selected) -1f else 0f,
+        animationSpec = spring(dampingRatio = 0.62f, stiffness = 780f),
+        label = "chipLift"
+    )
+
     Text(
         text = label,
         modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                translationY = lift
+            }
             .background(bg, RoundedCornerShape(999.dp))
             .border(1.dp, borderColor, RoundedCornerShape(999.dp))
-            .clickable(onClick = onClick)
+            .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 9.dp),
         color = textColor,
         fontFamily = InterFamily,
@@ -140,7 +183,7 @@ fun FilterChipsRow(
 @Composable
 fun StatusPill(sold: Boolean, modifier: Modifier = Modifier) {
     val bg = if (sold) AccentDim else Color(0x248B93A1)
-    val color = if (sold) Accent else Muted
+    val color = if (sold) Accent else TextSecondary
     Text(
         text = if (sold) "SOLD" else "IN STOCK",
         modifier = modifier

@@ -89,6 +89,7 @@ fun PhonePreviewSheet(
                     Column {
                         Text(
                             text = phone.model.ifBlank { "Untitled model" },
+                            color = TextPrimary,
                             fontFamily = SpaceGroteskFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp
@@ -160,8 +161,6 @@ fun PhonePreviewSheet(
                             Modifier.fillMaxWidth(itemWidth),
                             valueColor = if (computed.totalProfit >= 0) Accent else Danger
                         )
-                        MoneyBox("Money Withdrawn", formatMoney(computed.withdrawn), Modifier.fillMaxWidth(itemWidth), valueColor = Warn)
-                        MoneyBox("Remaining Amount", formatMoney(computed.remaining), Modifier.fillMaxWidth(itemWidth))
                         MoneyBox(
                             "Asif's Profit",
                             formatMoneyOrDash(computed.asifProfit, computed.sold),

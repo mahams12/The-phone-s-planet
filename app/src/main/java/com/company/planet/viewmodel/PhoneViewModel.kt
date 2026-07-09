@@ -10,12 +10,12 @@ import com.company.planet.data.computePhone
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
+
+enum class AppScreen { DASHBOARD, ADD, INVENTORY }
 
 enum class StatusFilter { ALL, STOCK, SOLD }
 
@@ -28,9 +28,11 @@ data class PhoneUiState(
     val companyFilter: String = "all",
     val statusFilter: StatusFilter = StatusFilter.ALL,
     val isLoading: Boolean = true,
-    val showForm: Boolean = false,
+    val currentScreen: AppScreen = AppScreen.DASHBOARD,
     val editingPhone: Phone? = null,
     val previewPhone: Phone? = null,
+    val highlightId: String? = null,
+    val toastMessage: String? = null,
     val errorMessage: String? = null
 )
 
@@ -43,22 +45,26 @@ class PhoneViewModel(
     private val companyFilter = MutableStateFlow("all")
     private val statusFilter = MutableStateFlow(StatusFilter.ALL)
     private val isLoading = MutableStateFlow(true)
-    private val showForm = MutableStateFlow(false)
+    private val currentScreen = MutableStateFlow(AppScreen.DASHBOARD)
     private val editingPhone = MutableStateFlow<Phone?>(null)
     private val previewPhone = MutableStateFlow<Phone?>(null)
+    private val highlightId = MutableStateFlow<String?>(null)
+    private val toastMessage = MutableStateFlow<String?>(null)
     private val errorMessage = MutableStateFlow<String?>(null)
 
     val uiState: StateFlow<PhoneUiState> = combine(
         phones,
         combine(search, companyFilter, statusFilter) { s, c, st -> Triple(s, c, st) },
-        combine(isLoading, showForm) { loading, form -> loading to form },
-        combine(editingPhone, previewPhone, errorMessage) { editing, preview, error ->
-            Triple(editing, preview, error)
-        }
-    ) { phoneList, filters, loadingForm, modals ->
+        combine(isLoading, currentScreen) { loading, screen -> loading to screen },
+        combine(editingPhone, previewPhone, highlightId) { editing, preview, highlight ->
+            Triple(editing, preview, highlight)
+        },
+        combine(toastMessage, errorMessage) { toast, error -> toast to error }
+    ) { phoneList, filters, loadingScreen, modals, messages ->
         val (searchQuery, company, status) = filters
-        val (loading, formVisible) = loadingForm
-        val (editing, preview, error) = modals
+        val (loading, screen) = loadingScreen
+        val (editing, preview, highlight) = modals
+        val (toast, error) = messages
 
         val filtered = filterPhones(phoneList, searchQuery, company, status)
         val companies = phoneList.map { it.company }.filter { it.isNotBlank() }.distinct().sorted()
@@ -72,9 +78,11 @@ class PhoneViewModel(
             companyFilter = company,
             statusFilter = status,
             isLoading = loading,
-            showForm = formVisible,
+            currentScreen = screen,
             editingPhone = editing,
             previewPhone = preview,
+            highlightId = highlight,
+            toastMessage = toast,
             errorMessage = error
         )
     }.stateIn(
@@ -92,6 +100,13 @@ class PhoneViewModel(
         }
     }
 
+    fun navigateTo(screen: AppScreen, keepForm: Boolean = false) {
+        if (screen == AppScreen.ADD && !keepForm) {
+            editingPhone.value = null
+        }
+        currentScreen.value = screen
+    }
+
     fun setSearch(query: String) {
         search.value = query
     }
@@ -104,20 +119,18 @@ class PhoneViewModel(
         statusFilter.value = filter
     }
 
-    fun openAddForm() {
+    fun openAddScreen() {
         editingPhone.value = null
-        showForm.value = true
-        previewPhone.value = null
+        currentScreen.value = AppScreen.ADD
     }
 
     fun openEditForm(phone: Phone) {
         editingPhone.value = phone
-        showForm.value = true
         previewPhone.value = null
+        currentScreen.value = AppScreen.ADD
     }
 
-    fun closeForm() {
-        showForm.value = false
+    fun resetForm() {
         editingPhone.value = null
     }
 
@@ -129,6 +142,14 @@ class PhoneViewModel(
         previewPhone.value = null
     }
 
+    fun clearHighlight() {
+        highlightId.value = null
+    }
+
+    fun clearToast() {
+        toastMessage.value = null
+    }
+
     fun clearError() {
         errorMessage.value = null
     }
@@ -136,6 +157,7 @@ class PhoneViewModel(
     fun savePhone(phone: Phone) {
         viewModelScope.launch {
             try {
+                val isEdit = phone.id.isNotBlank() && phones.value.any { it.id == phone.id }
                 val id = phone.id.ifBlank { UUID.randomUUID().toString() }
                 val existing = phones.value.find { it.id == id }
                 val toSave = phone.copy(
@@ -143,7 +165,10 @@ class PhoneViewModel(
                     createdAt = existing?.createdAt ?: System.currentTimeMillis()
                 )
                 repository.savePhone(toSave)
-                closeForm()
+                editingPhone.value = null
+                highlightId.value = id
+                toastMessage.value = if (isEdit) "Phone updated" else "Phone added to inventory"
+                currentScreen.value = AppScreen.INVENTORY
             } catch (e: Exception) {
                 errorMessage.value = "Failed to save: ${e.localizedMessage}"
             }
@@ -155,6 +180,7 @@ class PhoneViewModel(
             try {
                 repository.deletePhone(phone.id)
                 closePreview()
+                toastMessage.value = "Phone deleted"
             } catch (e: Exception) {
                 errorMessage.value = "Failed to delete: ${e.localizedMessage}"
             }

@@ -1,6 +1,7 @@
 package com.company.planet.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -25,11 +26,9 @@ val InterFamily = FontFamily(
     Font(interFont, provider, FontWeight.SemiBold)
 )
 
-val SpaceGroteskFamily = FontFamily(
-    Font(spaceGroteskFont, provider, FontWeight.Medium),
-    Font(spaceGroteskFont, provider, FontWeight.SemiBold),
-    Font(spaceGroteskFont, provider, FontWeight.Bold)
-)
+// Space Grotesk can fail to load on some devices and render text as near-black.
+// SansSerif keeps headings readable while matching the overall UI weight.
+val SpaceGroteskFamily = FontFamily.SansSerif
 
 val JetBrainsMonoFamily = FontFamily(
     Font(jetBrainsMonoFont, provider, FontWeight.Normal),
@@ -41,32 +40,38 @@ val TppTypography = Typography(
     bodyLarge = TextStyle(
         fontFamily = InterFamily,
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp
+        fontSize = 16.sp,
+        color = TextPrimary
     ),
     bodyMedium = TextStyle(
         fontFamily = InterFamily,
         fontWeight = FontWeight.Normal,
-        fontSize = 14.sp
+        fontSize = 14.sp,
+        color = TextPrimary
     ),
     bodySmall = TextStyle(
         fontFamily = InterFamily,
         fontWeight = FontWeight.Normal,
-        fontSize = 12.sp
+        fontSize = 12.sp,
+        color = TextSecondary
     ),
     titleLarge = TextStyle(
         fontFamily = SpaceGroteskFamily,
         fontWeight = FontWeight.Bold,
-        fontSize = 22.sp
+        fontSize = 22.sp,
+        color = TextPrimary
     ),
     titleMedium = TextStyle(
         fontFamily = SpaceGroteskFamily,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 16.sp
+        fontSize = 16.sp,
+        color = TextPrimary
     ),
     labelSmall = TextStyle(
         fontFamily = InterFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 11.sp,
-        letterSpacing = 0.6.sp
+        letterSpacing = 0.6.sp,
+        color = Muted
     )
 )

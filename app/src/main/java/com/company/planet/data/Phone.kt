@@ -24,10 +24,8 @@ data class PhoneComputed(
     val purchase: Double,
     val sale: Double,
     val told: Double,
-    val withdrawn: Double,
     val totalMoney: Double,
     val totalProfit: Double,
-    val remaining: Double,
     val asifProfit: Double,
     val shozabProfit: Double
 )
@@ -38,8 +36,6 @@ data class PhoneTotals(
     val sold: Int = 0,
     val totalMoney: Double = 0.0,
     val totalProfit: Double = 0.0,
-    val withdrawn: Double = 0.0,
-    val remaining: Double = 0.0,
     val asifProfit: Double = 0.0,
     val shozabProfit: Double = 0.0
 )
@@ -49,21 +45,25 @@ fun computePhone(phone: Phone): PhoneComputed {
     val purchase = phone.purchasePrice
     val sale = phone.salePrice
     val told = phone.toldPrice
-    val withdrawn = phone.withdrawn
     val totalMoney = if (sold) sale else 0.0
-    val totalProfit = if (sold) sale - purchase else 0.0
-    val remaining = totalMoney - withdrawn
-    val asifProfit = if (sold) told - purchase else 0.0
-    val shozabProfit = if (sold) sale - told else 0.0
+    val totalProfit = if (sold) maxOf(0.0, sale - purchase) else 0.0
+
+    val asifProfit = when {
+        !sold || told <= 0 -> 0.0
+        else -> maxOf(0.0, sale - told)
+    }
+    val shozabProfit = when {
+        !sold || told <= 0 -> 0.0
+        else -> maxOf(0.0, told - purchase)
+    }
+
     return PhoneComputed(
         sold = sold,
         purchase = purchase,
         sale = sale,
         told = told,
-        withdrawn = withdrawn,
         totalMoney = totalMoney,
         totalProfit = totalProfit,
-        remaining = remaining,
         asifProfit = asifProfit,
         shozabProfit = shozabProfit
     )
@@ -74,7 +74,6 @@ fun computeAll(phones: List<Phone>): PhoneTotals {
     var sold = 0
     var totalMoney = 0.0
     var totalProfit = 0.0
-    var withdrawn = 0.0
     var asifProfit = 0.0
     var shozabProfit = 0.0
 
@@ -83,7 +82,6 @@ fun computeAll(phones: List<Phone>): PhoneTotals {
         if (c.sold) sold++ else inStock++
         totalMoney += c.totalMoney
         totalProfit += c.totalProfit
-        withdrawn += c.withdrawn
         asifProfit += c.asifProfit
         shozabProfit += c.shozabProfit
     }
@@ -94,8 +92,6 @@ fun computeAll(phones: List<Phone>): PhoneTotals {
         sold = sold,
         totalMoney = totalMoney,
         totalProfit = totalProfit,
-        withdrawn = withdrawn,
-        remaining = totalMoney - withdrawn,
         asifProfit = asifProfit,
         shozabProfit = shozabProfit
     )

@@ -1,6 +1,7 @@
 package com.company.planet.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
@@ -21,8 +22,9 @@ fun TppLogo(
         painter = painterResource(R.drawable.logo_tpp),
         contentDescription = "The Phone's Planet",
         modifier = modifier
-            .height(height)
-            .widthIn(max = maxWidth),
+            .fillMaxWidth()
+            .widthIn(max = maxWidth)
+            .height(height),
         contentScale = ContentScale.Fit
     )
 }

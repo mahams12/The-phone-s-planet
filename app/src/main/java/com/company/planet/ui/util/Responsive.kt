@@ -16,7 +16,8 @@ data class ResponsiveValues(
     val compactHeader: Boolean,
     val useFullScreenSheet: Boolean,
     val statValueSize: Float,
-    val logoHeight: Dp
+    val logoHeight: Dp,
+    val logoMaxWidth: Dp
 )
 
 @Composable
@@ -28,23 +29,25 @@ fun rememberResponsive(): ResponsiveValues {
         when {
             widthDp < 360 -> ResponsiveValues(
                 screenSize = ScreenSize.Compact,
-                horizontalPadding = 12.dp,
+                horizontalPadding = 10.dp,
                 statColumns = 2,
                 phoneColumns = 1,
                 compactHeader = true,
                 useFullScreenSheet = true,
-                statValueSize = 17f,
-                logoHeight = 52.dp
+                statValueSize = 16f,
+                logoHeight = 56.dp,
+                logoMaxWidth = 200.dp
             )
             widthDp < 600 -> ResponsiveValues(
                 screenSize = ScreenSize.Compact,
-                horizontalPadding = 16.dp,
+                horizontalPadding = 14.dp,
                 statColumns = 2,
                 phoneColumns = 1,
                 compactHeader = true,
                 useFullScreenSheet = widthDp < 400,
-                statValueSize = 19f,
-                logoHeight = 56.dp
+                statValueSize = 18f,
+                logoHeight = if (widthDp < 400) 64.dp else 72.dp,
+                logoMaxWidth = if (widthDp < 400) 220.dp else 260.dp
             )
             widthDp < 840 -> ResponsiveValues(
                 screenSize = ScreenSize.Medium,
@@ -54,7 +57,8 @@ fun rememberResponsive(): ResponsiveValues {
                 compactHeader = false,
                 useFullScreenSheet = false,
                 statValueSize = 21f,
-                logoHeight = 60.dp
+                logoHeight = 80.dp,
+                logoMaxWidth = 280.dp
             )
             else -> ResponsiveValues(
                 screenSize = ScreenSize.Expanded,
@@ -64,7 +68,8 @@ fun rememberResponsive(): ResponsiveValues {
                 compactHeader = false,
                 useFullScreenSheet = false,
                 statValueSize = 21f,
-                logoHeight = 64.dp
+                logoHeight = 88.dp,
+                logoMaxWidth = 300.dp
             )
         }
     }
