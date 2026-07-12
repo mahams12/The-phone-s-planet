@@ -1,21 +1,40 @@
 # TPP — The Phone's Planet
 
-Personal Android inventory & sales ledger app. Built with Jetpack Compose and Firebase Firestore.
+Personal phone inventory & sales ledger. Built with **Flutter** + Firebase Firestore.
+Runs on **Android** and **iOS** from one codebase.
 
-## Firebase project
+## Firebase
 
 - **Project:** The phone's planet (`the-phone-s-planet`)
-- **Package:** `com.company.planet`
+- **Package / bundle:** `com.company.planet`
+- **Collection:** `phones` (same schema as before — existing data works)
+
+### Android
+
+`android/app/google-services.json` is already in place.
+
+### iOS
+
+1. Firebase Console → add an **iOS** app with bundle id `com.company.planet`
+2. Download `GoogleService-Info.plist` into `ios/Runner/`
+3. Update `iosAppId` in `lib/firebase_options.dart` to the new iOS app id
 
 ## Setup
 
-1. Open the project in **Android Studio**
-2. In [Firebase Console](https://console.firebase.google.com/project/the-phone-s-planet), create **Firestore Database** if you haven't yet
-3. Sync Gradle and run on your phone (API 26+)
+```bash
+flutter pub get
+flutter run
+```
 
-`google-services.json` is already in `app/`.
+Open in Android Studio / VS Code / Xcode as needed. Requires Flutter 3.16+.
 
-### Firestore rules (personal use)
+## Features
+
+- Dashboard — inventory counts, profit split (Asif / Shozab), brand breakdown
+- Add / Edit phone — live profit preview, ±500 amount steppers
+- Inventory — search, brand & stock filters, preview sheet
+
+## Firestore rules (personal use)
 
 ```
 rules_version = '2';
@@ -28,26 +47,6 @@ service cloud.firestore {
 }
 ```
 
-Deploy from project root after `firebase login`:
-
 ```bash
 firebase deploy --only firestore
 ```
-
-Or paste the rules in Firebase Console → Firestore → Rules.
-
-## Run
-
-```bash
-./gradlew assembleDebug
-```
-
-APK: `app/build/outputs/apk/debug/app-debug.apk`
-
-## Features
-
-- Single-page app — opens straight to your inventory
-- TPP logo branding
-- Phone inventory with sales & profit tracking
-- Real-time Firestore sync
-- Responsive on all phone sizes
