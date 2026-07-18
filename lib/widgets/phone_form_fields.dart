@@ -27,6 +27,7 @@ class PhoneFormData {
     this.purchasePrice = 0,
     this.salePrice = 0,
     this.toldPrice = 0,
+    this.commissionFromAsif = 0,
     this.sold = false,
     this.createdAt = 0,
     this.datePurchased = 0,
@@ -49,6 +50,7 @@ class PhoneFormData {
       purchasePrice: phone.purchasePrice,
       salePrice: phone.salePrice,
       toldPrice: phone.toldPrice,
+      commissionFromAsif: phone.commissionFromAsif,
       sold: phone.sold,
       createdAt: phone.createdAt,
       datePurchased: phone.datePurchased,
@@ -70,6 +72,7 @@ class PhoneFormData {
   double purchasePrice;
   double salePrice;
   double toldPrice;
+  double commissionFromAsif;
   bool sold;
   int createdAt;
   int datePurchased;
@@ -92,6 +95,7 @@ class PhoneFormData {
       purchasePrice: purchasePrice,
       salePrice: salePrice,
       toldPrice: toldPrice,
+      commissionFromAsif: commissionFromAsif,
       withdrawn: 0,
       sold: sold,
       createdAt: createdAt,
@@ -134,6 +138,7 @@ class _PhoneFormFieldsState extends State<PhoneFormFields> {
   late final TextEditingController _purchase;
   late final TextEditingController _sale;
   late final TextEditingController _told;
+  late final TextEditingController _commission;
   late final TextEditingController _battery;
 
   PhoneFormData get data => widget.data;
@@ -151,6 +156,8 @@ class _PhoneFormFieldsState extends State<PhoneFormFields> {
     _purchase = TextEditingController(text: _moneyText(data.purchasePrice));
     _sale = TextEditingController(text: _moneyText(data.salePrice));
     _told = TextEditingController(text: _moneyText(data.toldPrice));
+    _commission =
+        TextEditingController(text: _moneyText(data.commissionFromAsif));
     _battery = TextEditingController(
       text: data.batteryHealth == 0 ? '' : data.batteryHealth.toString(),
     );
@@ -169,6 +176,7 @@ class _PhoneFormFieldsState extends State<PhoneFormFields> {
     _purchase.dispose();
     _sale.dispose();
     _told.dispose();
+    _commission.dispose();
     _battery.dispose();
     super.dispose();
   }
@@ -340,7 +348,7 @@ class _PhoneFormFieldsState extends State<PhoneFormFields> {
         const SizedBox(height: 14),
         _amountField(
           controller: _sale,
-          label: 'Sale price',
+          label: 'Actual sale price',
           getValue: () => data.salePrice,
           onChanged: (v) => data.salePrice = v,
         ),
@@ -350,6 +358,13 @@ class _PhoneFormFieldsState extends State<PhoneFormFields> {
           label: 'Told to Asif',
           getValue: () => data.toldPrice,
           onChanged: (v) => data.toldPrice = v,
+        ),
+        const SizedBox(height: 14),
+        _amountField(
+          controller: _commission,
+          label: 'Commission from Asif',
+          getValue: () => data.commissionFromAsif,
+          onChanged: (v) => data.commissionFromAsif = v,
         ),
         const SizedBox(height: 8),
         ValueListenableBuilder<int>(
@@ -628,21 +643,53 @@ class CalcPreviewPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: TppColors.bgElevated,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: TppColors.line),
+        border: Border.all(
+          color: computed.hasNegativeProfit ? TppColors.danger : TppColors.line,
+        ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (computed.hasNegativeProfit) ...[
+            const Text(
+              'Warning: one or more profit values are negative (loss).',
+              style: TextStyle(
+                color: TppColors.danger,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
           _row('Total Money', formatMoneyOrDash(computed.totalMoney, computed.sold)),
-          _row('Total Profit', formatMoneyOrDash(computed.totalProfit, computed.sold)),
-          _row("Asif's Profit", formatMoneyOrDash(computed.asifProfit, computed.sold)),
-          _row("Shozab's Profit", formatMoneyOrDash(computed.shozabProfit, computed.sold),
-              last: true),
+          _row(
+            'Total Profit',
+            formatMoneyOrDash(computed.totalProfit, computed.sold),
+            negative: computed.sold && computed.totalProfit < 0,
+          ),
+          _row(
+            'Hidden Profit',
+            formatMoneyOrDash(computed.hiddenProfit, computed.sold),
+            negative: computed.sold && computed.hiddenProfit < 0,
+          ),
+          _row(
+            "Asif's Profit",
+            formatMoneyOrDash(computed.asifProfit, computed.sold),
+            negative: computed.sold && computed.asifProfit < 0,
+          ),
+          _row(
+            "Shozab's Profit",
+            formatMoneyOrDash(computed.shozabProfit, computed.sold),
+            negative: computed.sold && computed.shozabProfit < 0,
+            last: true,
+          ),
         ],
       ),
     );
   }
 
-  Widget _row(String label, String value, {bool last = false}) {
+  Widget _row(String label, String value,
+      {bool last = false, bool negative = false}) {
     return Padding(
       padding: EdgeInsets.only(bottom: last ? 0 : 10),
       child: Row(
@@ -655,8 +702,8 @@ class CalcPreviewPanel extends StatelessWidget {
           ),
           Text(
             value,
-            style: const TextStyle(
-              color: TppColors.accent,
+            style: TextStyle(
+              color: negative ? TppColors.danger : TppColors.accent,
               fontWeight: FontWeight.w700,
             ),
           ),

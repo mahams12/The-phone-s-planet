@@ -15,6 +15,7 @@ class Phone {
     this.purchasePrice = 0,
     this.salePrice = 0,
     this.toldPrice = 0,
+    this.commissionFromAsif = 0,
     this.withdrawn = 0,
     this.sold = false,
     this.createdAt = 0,
@@ -34,8 +35,16 @@ class Phone {
   final String storage;
   final String colour;
   final double purchasePrice;
+
+  /// Actual sale price charged to the customer.
   final double salePrice;
+
+  /// Sale price told to Asif (may be lower than [salePrice]).
   final double toldPrice;
+
+  /// Commission Asif pays Shozab for selling the phone.
+  final double commissionFromAsif;
+
   final double withdrawn;
   final bool sold;
   final int createdAt;
@@ -63,6 +72,7 @@ class Phone {
     double? purchasePrice,
     double? salePrice,
     double? toldPrice,
+    double? commissionFromAsif,
     double? withdrawn,
     bool? sold,
     int? createdAt,
@@ -84,6 +94,7 @@ class Phone {
       purchasePrice: purchasePrice ?? this.purchasePrice,
       salePrice: salePrice ?? this.salePrice,
       toldPrice: toldPrice ?? this.toldPrice,
+      commissionFromAsif: commissionFromAsif ?? this.commissionFromAsif,
       withdrawn: withdrawn ?? this.withdrawn,
       sold: sold ?? this.sold,
       createdAt: createdAt ?? this.createdAt,
@@ -106,6 +117,7 @@ class Phone {
         'purchasePrice': purchasePrice,
         'salePrice': salePrice,
         'toldPrice': toldPrice,
+        'commissionFromAsif': commissionFromAsif,
         'withdrawn': withdrawn,
         'sold': sold,
         'createdAt': createdAt,
@@ -129,6 +141,7 @@ class Phone {
       purchasePrice: _asDouble(data['purchasePrice']),
       salePrice: _asDouble(data['salePrice']),
       toldPrice: _asDouble(data['toldPrice']),
+      commissionFromAsif: _asDouble(data['commissionFromAsif']),
       withdrawn: _asDouble(data['withdrawn']),
       sold: (data['sold'] as bool?) ?? false,
       createdAt: (data['createdAt'] as num?)?.toInt() ??
@@ -151,20 +164,31 @@ class PhoneComputed {
     required this.purchase,
     required this.sale,
     required this.told,
+    required this.commissionFromAsif,
     required this.totalMoney,
     required this.totalProfit,
+    required this.hiddenProfit,
     required this.asifProfit,
     required this.shozabProfit,
+    required this.hasNegativeProfit,
   });
 
   final bool sold;
   final double purchase;
   final double sale;
   final double told;
+  final double commissionFromAsif;
   final double totalMoney;
   final double totalProfit;
+
+  /// Gap between actual sale and what Asif was told.
+  final double hiddenProfit;
+
   final double asifProfit;
   final double shozabProfit;
+
+  /// True when any profit component is negative (loss) — UI should warn.
+  final bool hasNegativeProfit;
 }
 
 class PhoneTotals {
@@ -190,27 +214,68 @@ class PhoneTotals {
 PhoneComputed computePhone(Phone phone) {
   final sold = phone.sold;
   final purchase = phone.purchasePrice;
+  // actualSalePrice
   final sale = phone.salePrice;
+  // toldToAsif
   final told = phone.toldPrice;
-  final totalMoney = sold ? sale : 0.0;
-  final totalProfit = sold ? (sale - purchase).clamp(0.0, double.infinity) : 0.0;
+  final commission = phone.commissionFromAsif;
 
-  final asifProfit = (!sold || told <= 0)
-      ? 0.0
-      : (sale - told).clamp(0.0, double.infinity);
-  final shozabProfit = (!sold || told <= 0)
-      ? 0.0
-      : (told - purchase).clamp(0.0, double.infinity);
+  if (!sold) {
+    return PhoneComputed(
+      sold: false,
+      purchase: purchase,
+      sale: sale,
+      told: told,
+      commissionFromAsif: commission,
+      totalMoney: 0,
+      totalProfit: 0,
+      hiddenProfit: 0,
+      asifProfit: 0,
+      shozabProfit: 0,
+      hasNegativeProfit: false,
+    );
+  }
+
+  final totalMoney = sale;
+
+  // totalProfit = actualSalePrice - purchasePrice
+  final totalProfit = sale - purchase;
+
+  late final double hiddenProfit;
+  late final double asifProfit;
+  late final double shozabProfit;
+
+  if (told > 0) {
+    // hiddenProfit = actualSalePrice - toldToAsif
+    hiddenProfit = sale - told;
+    // asifProfit = toldToAsif - purchasePrice
+    asifProfit = told - purchase;
+    // shozabProfit = hiddenProfit + commissionFromAsif
+    shozabProfit = hiddenProfit + commission;
+  } else {
+    // No told price: Asif has no share; Shozab keeps the full sale margin + commission.
+    hiddenProfit = 0;
+    asifProfit = 0;
+    shozabProfit = totalProfit + commission;
+  }
+
+  final hasNegativeProfit = totalProfit < 0 ||
+      hiddenProfit < 0 ||
+      asifProfit < 0 ||
+      shozabProfit < 0;
 
   return PhoneComputed(
-    sold: sold,
+    sold: true,
     purchase: purchase,
     sale: sale,
     told: told,
+    commissionFromAsif: commission,
     totalMoney: totalMoney,
     totalProfit: totalProfit,
+    hiddenProfit: hiddenProfit,
     asifProfit: asifProfit,
     shozabProfit: shozabProfit,
+    hasNegativeProfit: hasNegativeProfit,
   );
 }
 

@@ -71,16 +71,30 @@ Future<void> showPhonePreviewSheet({
             'Sales Ledger',
             [
               _kv('Purchase', formatMoney(phone.purchasePrice)),
-              _kv('Sale', formatMoneyOrDash(phone.salePrice, phone.sold)),
+              _kv('Actual Sale', formatMoneyOrDash(phone.salePrice, phone.sold)),
               _kv('Told to Asif', formatMoney(phone.toldPrice)),
+              _kv('Commission from Asif', formatMoney(phone.commissionFromAsif)),
               if (phone.datePurchased > 0)
                 _kv('Date Purchased', formatDate(phone.datePurchased)),
               if (phone.sold && phone.dateSold > 0)
                 _kv('Date Sold', formatDate(phone.dateSold)),
               _kv('Total Money', formatMoneyOrDash(computed.totalMoney, phone.sold)),
               _kv('Total Profit', formatMoneyOrDash(computed.totalProfit, phone.sold)),
+              _kv('Hidden Profit', formatMoneyOrDash(computed.hiddenProfit, phone.sold)),
               _kv("Asif's Profit", formatMoneyOrDash(computed.asifProfit, phone.sold)),
               _kv("Shozab's Profit", formatMoneyOrDash(computed.shozabProfit, phone.sold)),
+              if (computed.hasNegativeProfit)
+                const Padding(
+                  padding: EdgeInsets.only(top: 4),
+                  child: Text(
+                    'Warning: one or more profit values are negative (loss).',
+                    style: TextStyle(
+                      color: TppColors.danger,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 20),
